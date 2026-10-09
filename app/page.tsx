@@ -24,7 +24,7 @@ export default function AjoSaveApp() {
     if(typeof window !== "undefined" && window.PaystackPop){
       // @ts-ignore
       const handler = window.PaystackPop.setup({
-        key: 'pk_test_xxxxxxxx', // replace with your live key
+        key: 'pk_test_1a179d5141c428857ca205c3f61b164cb6df938b'
         email: 'hassan@ajosave.com',
         amount: g.amount*100,
         ref: ref,
