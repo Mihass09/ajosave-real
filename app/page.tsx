@@ -1,6 +1,5 @@
 "use client";
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
 type Group = { id: string; name: string; amount: number; members: number; cycle: string; nextPayout: string; youPaid: boolean; }
 
 export default function AjoSaveApp() {
@@ -10,7 +9,12 @@ export default function AjoSaveApp() {
     { id: "2", name: "Abuja Tech Savers", amount: 20000, members: 5, cycle: "Monthly", nextPayout: "You next!", youPaid: true },
   ]);
   const [showCreate, setShowCreate] = useState(false);
-  const [newGroup, setNewGroup] = useState({ name: "", amount: "", members: "" });
+  useEffect(() => {
+  const script = document.createElement("script");
+  script.src = "https://js.paystack.co/v1/inline.js";
+  script.async = true;
+  document.body.appendChild(script);
+}, []);
 
   const createGroup = () => {
     if(!newGroup.name || !newGroup.amount) return alert("Enter name & amount");
@@ -24,14 +28,14 @@ export default function AjoSaveApp() {
     if(typeof window !== "undefined" && window.PaystackPop){
       // @ts-ignore
       const handler = window.PaystackPop.setup({
-        key: 'pk_test_1a179d5141c428857ca205c3f61b164cb6df938b'
+        key: 'pk_test_1a179d5141c428857ca205c3f61b164cb6df938b',
         email: 'favourbitrus254@gmail.com',
         amount: g.amount*100,
         ref: ref,
         callback: function(){ setGroups(prev=>prev.map(x=>x.id===g.id?{...x, youPaid:true}:x)); alert("Payment success! ₦"+g.amount.toLocaleString()) },
         onClose: function(){ alert("Payment closed") }
       });
-      handler.openIframe();
+    handler.openIframe();
     } else {
       // Demo mode
       if(confirm(`Pay ₦${g.amount.toLocaleString()} for ${g.name} with Paystack?\n( Demo - click OK to mark paid )`)){
