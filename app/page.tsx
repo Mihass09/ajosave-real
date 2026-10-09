@@ -25,7 +25,7 @@ export default function AjoSaveApp() {
       // @ts-ignore
       const handler = window.PaystackPop.setup({
         key: 'pk_test_1a179d5141c428857ca205c3f61b164cb6df938b'
-        email: 'hassan@ajosave.com',
+        email: 'favourbitrus254@gmail.com',
         amount: g.amount*100,
         ref: ref,
         callback: function(){ setGroups(prev=>prev.map(x=>x.id===g.id?{...x, youPaid:true}:x)); alert("Payment success! ₦"+g.amount.toLocaleString()) },
