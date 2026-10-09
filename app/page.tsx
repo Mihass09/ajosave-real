@@ -13,32 +13,62 @@ export default function AjoSaveApp() {
   const [newGroup, setNewGroup] = useState({ name: "", amount: "", members: "" });
 
   const createGroup = () => {
-    if(!newGroup.name || !newGroup.amount) return;
+    if(!newGroup.name || !newGroup.amount) return alert("Enter name & amount");
     setGroups([{ id: Date.now().toString(), name: newGroup.name, amount: Number(newGroup.amount), members: Number(newGroup.members)||5, cycle: "Monthly", nextPayout: "You in 2 weeks", youPaid: false }, ...groups]);
     setNewGroup({ name: "", amount: "", members: "" }); setShowCreate(false); setPage("dashboard");
   };
 
-  const s = {
-    page: { minHeight: "100vh", fontFamily: "system-ui, sans-serif", background: "#f0fdf4" } as any,
-    nav: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" } as any,
-    logo: { fontWeight: 900, fontSize: 24, color: "#065f46" } as any,
-    btn: { background: "#059669", color: "white", border: "none", padding: "12px 24px", borderRadius: 999, fontWeight: 700, cursor: "pointer" } as any,
-    hero: { textAlign: "center" as const, padding: "60px 20px", maxWidth: 800, margin: "0 auto" },
-    h1: { fontSize: 48, fontWeight: 900, lineHeight: 1.1, color: "#111" } as any,
-    card: { background: "white", padding: 20, borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.05)", marginBottom: 16 } as any,
+  const payWithPaystack = (g: Group) => {
+    const ref = "AJO_"+Date.now();
+    // @ts-ignore
+    if(typeof window !== "undefined" && window.PaystackPop){
+      // @ts-ignore
+      const handler = window.PaystackPop.setup({
+        key: 'pk_test_xxxxxxxx', // replace with your live key
+        email: 'hassan@ajosave.com',
+        amount: g.amount*100,
+        ref: ref,
+        callback: function(){ setGroups(prev=>prev.map(x=>x.id===g.id?{...x, youPaid:true}:x)); alert("Payment success! ₦"+g.amount.toLocaleString()) },
+        onClose: function(){ alert("Payment closed") }
+      });
+      handler.openIframe();
+    } else {
+      // Demo mode
+      if(confirm(`Pay ₦${g.amount.toLocaleString()} for ${g.name} with Paystack?\n( Demo - click OK to mark paid )`)){
+        setGroups(prev=>prev.map(x=>x.id===g.id?{...x, youPaid:true}:x));
+      }
+    }
+  };
+
+  const shareWhatsApp = (g: Group) => {
+    const text = `Join my Ajo group "${g.name}"! 💰 Save ₦${g.amount.toLocaleString()} ${g.cycle}. ${groups.length} members. Join here: https://ajosave-real.vercel.app - AjoSave 🇳🇬`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const s: any = {
+    page: { minHeight: "100vh", fontFamily: "'Geist', 'Inter', system-ui, sans-serif", background: "#f0fdf4", letterSpacing: "-0.02em" },
+    nav: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(10px)", position: "sticky" as const, top: 0, zIndex: 10, borderBottom: "1px solid #e5e7eb" },
+    logo: { fontWeight: 900, fontSize: 22, color: "#065f46", letterSpacing: "-1px" },
+    btn: { background: "#059669", color: "white", border: "none", padding: "12px 24px", borderRadius: 999, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 14px rgba(5,150,105,0.3)" },
+    btnBlack: { background: "#111827", color: "white", border: "none", padding: "12px 20px", borderRadius: 12, fontWeight: 800, cursor: "pointer", width: "100%" },
+    hero: { textAlign: "center" as const, padding: "40px 20px", maxWidth: 800, margin: "0 auto" },
+    h1: { fontSize: 44, fontWeight: 900, lineHeight: 0.95, color: "#111827", letterSpacing: "-2px" },
+    card: { background: "white", padding: 20, borderRadius: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.05)", marginBottom: 16, border: "1px solid #f3f4f6" },
   };
 
   if(page === "landing"){
     return (
       <div style={s.page}>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@800;900&display=swap" rel="stylesheet" />
+        <script src="https://js.paystack.co/v1/inline.js" async></script>
         <div style={s.nav}><div style={s.logo}>AjoSave 🇳🇬</div><button style={s.btn} onClick={()=>setPage("dashboard")}>Launch App</button></div>
         <div style={s.hero}>
-          <div style={{display:"inline-block", background:"white", padding:"6px 14px", borderRadius:999, fontSize:13, fontWeight:600, color:"#059669", marginBottom:20}}>Trusted by 2,000+ Nigerians 🇳🇬</div>
+          <div style={{display:"inline-flex", alignItems:"center", gap:6, background:"white", padding:"8px 16px", borderRadius:999, fontSize:12, fontWeight:800, color:"#059669", marginBottom:20, border:"1px solid #d1fae5", boxShadow:"0 1px 2px rgba(0,0,0,0.05)"}}>● Trusted by 2,000+ Nigerians 🇳🇬</div>
           <h1 style={s.h1}>Save Together,<br/><span style={{color:"#059669"}}>Grow Together</span></h1>
-          <p style={{fontSize:18, color:"#4b5563", marginTop:20}}>Digitize your Ajo, Esusu, Adashe. Create groups, collect automatically, never miss payout.</p>
-          <div style={{display:"flex", gap:12, justifyContent:"center", marginTop:30}}><button style={{...s.btn, padding:"16px 32px", fontSize:18}} onClick={()=>setPage("dashboard")}>Start Saving Free</button></div>
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, marginTop:60, textAlign:"left" as const}}>
-            {[{t:"Create Group", d:"Set amount, members, cycle in 30s"}, {t:"Auto Collect", d:"Members pay via transfer, we track"}, {t:"Fair Payout", d:"Rotational payout, transparent"}].map(c=><div key={c.t} style={s.card}><b>{c.t}</b><p style={{color:"#6b7280", marginTop:8, fontSize:14}}>{c.d}</p></div>)}
+          <p style={{fontSize:17, color:"#4b5563", marginTop:18, lineHeight:1.5, fontWeight:500}}>Digitize your Ajo, Esusu, Adashe. Create groups, collect automatically via Paystack, never miss payout.</p>
+          <div style={{display:"flex", gap:12, justifyContent:"center", marginTop:28, flexWrap:"wrap" as const}}><button style={{...s.btn, padding:"16px 32px", fontSize:17}} onClick={()=>setPage("dashboard")}>Start Saving Free →</button><button onClick={()=>shareWhatsApp({name:"AjoSave", amount:50000} as any)} style={{background:"white", border:"1px solid #e5e7eb", padding:"16px 24px", borderRadius:999, fontWeight:800, cursor:"pointer"}}>Share on WhatsApp</button></div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginTop:50, textAlign:"left" as const}}>
+            {[{t:"Create Group", d:"Set amount, members, cycle in 30s", i:"⚡"}, {t:"Paystack Pay", d:"Pay with card, transfer, USSD", i:"💳"}, {t:"WhatsApp Invite", d:"Invite & remind members easily", i:"💬"}].map(c=><div key={c.t} style={{...s.card, textAlign:"left"}}><div style={{fontSize:24}}>{c.i}</div><b style={{display:"block", marginTop:8, fontSize:15}}>{c.t}</b><p style={{color:"#6b7280", marginTop:6, fontSize:13, lineHeight:1.4}}>{c.d}</p></div>)}
           </div>
         </div>
       </div>
@@ -46,28 +76,31 @@ export default function AjoSaveApp() {
   }
 
   return (
-    <div style={{minHeight:"100vh", background:"#f9fafb", fontFamily:"system-ui"}}>
-      <div style={s.nav}><div style={s.logo} onClick={()=>setPage("landing")}>AjoSave</div><button style={s.btn} onClick={()=>setShowCreate(true)}>+ New Group</button></div>
+    <div style={{minHeight:"100vh", background:"#f9fafb", fontFamily:"Inter, system-ui", letterSpacing:"-0.02em"}}>
+      <script src="https://js.paystack.co/v1/inline.js" async></script>
+      <div style={s.nav}><div style={{...s.logo, cursor:"pointer"}} onClick={()=>setPage("landing")}>← AjoSave</div><button style={s.btn} onClick={()=>setShowCreate(true)}>+ New Group</button></div>
       <div style={{maxWidth:900, margin:"0 auto", padding:20}}>
-        <h2 style={{fontSize:28, fontWeight:900}}>Good evening, Hassan 👋</h2><p style={{color:"#6b7280"}}>You have ₦{groups.reduce((a,g)=>a+g.amount,0).toLocaleString()} in active savings</p>
+        <h2 style={{fontSize:28, fontWeight:900, letterSpacing:"-1px"}}>Good evening, Hassan 👋</h2><p style={{color:"#6b7280", fontWeight:500}}>You have <b style={{color:"#111"}}>₦{groups.reduce((a,g)=>a+g.amount,0).toLocaleString()}</b> in active savings • {groups.filter(g=>g.youPaid).length}/{groups.length} paid</p>
         <div style={{marginTop:24}}>
           {groups.map(g=>(
             <div key={g.id} style={s.card}>
-              <div style={{display:"flex", justifyContent:"space-between"}}><b style={{fontSize:18}}>{g.name}</b><span style={{background:g.youPaid?"#dcfce7":"#ffedd5", color:g.youPaid?"#166534":"#9a3412", padding:"4px 12px", borderRadius:999, fontSize:11, fontWeight:700}}>{g.youPaid?"PAID":"PAY NOW"}</span></div>
-              <div style={{display:"flex", gap:20, marginTop:16, fontSize:14}}><div><div style={{color:"#6b7280"}}>Amount</div><b>₦{g.amount.toLocaleString()}</b></div><div><div style={{color:"#6b7280"}}>Members</div><b>{g.members}</b></div><div><div style={{color:"#6b7280"}}>Cycle</div><b>{g.cycle}</b></div></div>
-              <div style={{marginTop:12, background:"#ecfdf5", padding:10, borderRadius:10, fontSize:13}}><span>Next payout: </span><b style={{color:"#059669"}}>{g.nextPayout}</b></div>
-              {!g.youPaid && <button onClick={()=>setGroups(groups.map(x=>x.id===g.id?{...x, youPaid:true}:x))} style={{width:"100%", marginTop:12, background:"#111", color:"white", padding:12, borderRadius:10, fontWeight:700, border:"none"}}>Mark as Paid ₦{g.amount.toLocaleString()}</button>}
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><b style={{fontSize:18, letterSpacing:"-0.5px"}}>{g.name}</b><span style={{background:g.youPaid?"#dcfce7":"#fef3c7", color:g.youPaid?"#166534":"#92400e", padding:"6px 12px", borderRadius:999, fontSize:11, fontWeight:900}}>{g.youPaid?"● PAID":"○ PAY NOW"}</span></div>
+              <div style={{display:"flex", gap:20, marginTop:16, fontSize:14}}><div><div style={{color:"#9ca3af", fontSize:11, fontWeight:700, textTransform:"uppercase" as const}}>Amount</div><b style={{fontSize:16}}>₦{g.amount.toLocaleString()}</b></div><div><div style={{color:"#9ca3af", fontSize:11, fontWeight:700, textTransform:"uppercase" as const}}>Members</div><b>{g.members}</b></div><div><div style={{color:"#9ca3af", fontSize:11, fontWeight:700, textTransform:"uppercase" as const}}>Cycle</div><b>{g.cycle}</b></div></div>
+              <div style={{marginTop:14, background:"#ecfdf5", padding:12, borderRadius:12, fontSize:13, display:"flex", justifyContent:"space-between", alignItems:"center"}}><span>Next payout: <b style={{color:"#059669"}}>{g.nextPayout}</b></span><button onClick={()=>shareWhatsApp(g)} style={{background:"white", border:"none", padding:"6px 12px", borderRadius:999, fontSize:12, fontWeight:800, cursor:"pointer"}}>Share ↗</button></div>
+              {!g.youPaid && <div style={{display:"flex", gap:8, marginTop:14}}><button onClick={()=>payWithPaystack(g)} style={{...s.btnBlack, background:"#059669"}}>Pay ₦{g.amount.toLocaleString()} with Paystack 💳</button></div>}
+              {g.youPaid && <div style={{marginTop:12, textAlign:"center", fontSize:13, color:"#059669", fontWeight:700}}>✓ Payment confirmed</div>}
             </div>
           ))}
         </div>
+        <div style={{marginTop:30, background:"white", padding:16, borderRadius:16, border:"1px dashed #d1d5db", textAlign:"center" as const}}><p style={{fontSize:13, color:"#6b7280"}}>🔒 Bank-grade security • Paystack secured • Built in Abuja 🇳🇬</p></div>
       </div>
       {showCreate && (
-        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", padding:20}}><div style={{background:"white", width:"100%", maxWidth:400, borderRadius:20, padding:24}}>
-          <h3 style={{fontSize:20, fontWeight:900}}>Create Ajo Group</h3>
-          <input value={newGroup.name} onChange={e=>setNewGroup({...newGroup, name:e.target.value})} placeholder="Group Name e.g. Abuja Savers" style={{width:"100%", marginTop:16, border:"1px solid #ddd", padding:12, borderRadius:10}}/>
-          <input value={newGroup.amount} onChange={e=>setNewGroup({...newGroup, amount:e.target.value})} placeholder="Amount e.g. 20000" type="number" style={{width:"100%", marginTop:10, border:"1px solid #ddd", padding:12, borderRadius:10}}/>
-          <input value={newGroup.members} onChange={e=>setNewGroup({...newGroup, members:e.target.value})} placeholder="Members e.g. 10" type="number" style={{width:"100%", marginTop:10, border:"1px solid #ddd", padding:12, borderRadius:10}}/>
-          <div style={{display:"flex", gap:10, marginTop:20}}><button onClick={()=>setShowCreate(false)} style={{flex:1, background:"#f3f4f6", padding:12, borderRadius:10, border:"none", fontWeight:700}}>Cancel</button><button onClick={createGroup} style={{flex:1, background:"#059669", color:"white", padding:12, borderRadius:10, border:"none", fontWeight:700}}>Create</button></div>
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:20, zIndex:50, backdropFilter:"blur(4px)"}}><div style={{background:"white", width:"100%", maxWidth:400, borderRadius:24, padding:24, boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
+          <h3 style={{fontSize:22, fontWeight:900, letterSpacing:"-0.5px"}}>Create Ajo Group</h3><p style={{color:"#6b7280", fontSize:13, marginTop:4}}>Start saving with friends in 30 seconds</p>
+          <input value={newGroup.name} onChange={e=>setNewGroup({...newGroup, name:e.target.value})} placeholder="Group Name e.g. Abuja Savers" style={{width:"100%", marginTop:16, border:"2px solid #f3f4f6", padding:14, borderRadius:12, fontWeight:600, outline:"none"}}/>
+          <input value={newGroup.amount} onChange={e=>setNewGroup({...newGroup, amount:e.target.value})} placeholder="Amount per person e.g. 20000" type="number" style={{width:"100%", marginTop:10, border:"2px solid #f3f4f6", padding:14, borderRadius:12, fontWeight:600, outline:"none"}}/>
+          <input value={newGroup.members} onChange={e=>setNewGroup({...newGroup, members:e.target.value})} placeholder="No. of members e.g. 10" type="number" style={{width:"100%", marginTop:10, border:"2px solid #f3f4f6", padding:14, borderRadius:12, fontWeight:600, outline:"none"}}/>
+          <div style={{display:"flex", gap:10, marginTop:20}}><button onClick={()=>setShowCreate(false)} style={{flex:1, background:"#f3f4f6", padding:14, borderRadius:12, border:"none", fontWeight:800, cursor:"pointer"}}>Cancel</button><button onClick={createGroup} style={{flex:1, background:"#111827", color:"white", padding:14, borderRadius:12, border:"none", fontWeight:800, cursor:"pointer"}}>Create Group →</button></div>
         </div></div>
       )}
     </div>
